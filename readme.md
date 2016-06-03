@@ -9,10 +9,18 @@
 ## Usage
 
 ```groovy
-dependencies {
-   ...
-   classpath 'me.ele:buttercookie-plugin:1.0.0'
- }
+
+buildscript {
+  repositories {
+    jcenter()
+
+    maven { url 'https://dl.bintray.com/jackcho/maven' }
+  }
+  dependencies {
+    ...
+    classpath 'me.ele:buttercookie-plugin:1.0.0'
+  }
+}
   
 apply plugin: 'com.android.application'
 apply plugin: 'me.ele.buttercookie'
