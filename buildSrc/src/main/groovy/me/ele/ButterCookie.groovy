@@ -127,8 +127,8 @@ class ButterCookie implements Plugin<Project> {
     String aptDirPath = "${project.buildDir.absolutePath}/generated/source/apt/${variant.name}"
     List<File> viewBinderFiles = getAllViewBinders(aptDirPath)
     Map<String, String> mapping = getMappings(variant)
-    StringBuilder content = new StringBuilder()
     viewBinderFiles.each { File file ->
+    StringBuilder content = new StringBuilder()
       file.eachLine { String line ->
         boolean isMatched = false
         mapping.each { k, v ->
