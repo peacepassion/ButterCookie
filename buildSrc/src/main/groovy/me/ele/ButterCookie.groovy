@@ -53,7 +53,6 @@ class ButterCookie implements Plugin<Project> {
 
         variant.outputs.each { BaseVariantOutput output ->
           output.processResources.doLast {
-            //change all fields in R.class to final
             changeAllFieldsOfIdToFinal(variant)
           }
         }
@@ -79,6 +78,10 @@ class ButterCookie implements Plugin<Project> {
           recompileSourceCode(variant)
 
           //compile & package, but you needn't do anything
+        }
+
+        project.tasks.findByName("bundle${variant.buildType.name.capitalize()}").doLast {
+          changeAllFieldsOfIdToFinal(variant)
         }
       }
     }
@@ -128,7 +131,7 @@ class ButterCookie implements Plugin<Project> {
     List<File> viewBinderFiles = getAllViewBinders(aptDirPath)
     Map<String, String> mapping = getMappings(variant)
     viewBinderFiles.each { File file ->
-    StringBuilder content = new StringBuilder()
+      StringBuilder content = new StringBuilder()
       file.eachLine { String line ->
         boolean isMatched = false
         mapping.each { k, v ->
@@ -216,6 +219,7 @@ class ButterCookie implements Plugin<Project> {
     }
   }
 
+  //change all fields in R.class to final
   void changeAllFieldsOfIdToFinal(LibraryVariant variant) {
     String rFilePath = getR(variant)
     StringBuilder content = new StringBuilder()
