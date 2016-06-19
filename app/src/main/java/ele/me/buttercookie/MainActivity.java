@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import io.realm.examples.appmodules.ModulesExampleActivity;
 import me.ele.buttercookie.LibraryActivity;
 
 public class MainActivity extends AppCompatActivity {
@@ -17,8 +18,12 @@ public class MainActivity extends AppCompatActivity {
     ButterKnife.bind(this);
   }
 
-  @OnClick(R.id.btn2) void toast() {
-    Toast.makeText(MainActivity.this, "hah2", Toast.LENGTH_SHORT).show();
+  @OnClick(R.id.test_library) void launchLibraryActivity() {
+    Toast.makeText(MainActivity.this, "launch library activity", Toast.LENGTH_SHORT).show();
     startActivity(new Intent(this, LibraryActivity.class));
+  }
+
+  @OnClick(R.id.test_realm) void gotoRealmTestActivity() {
+    startActivity(new Intent(this, ModulesExampleActivity.class));
   }
 }

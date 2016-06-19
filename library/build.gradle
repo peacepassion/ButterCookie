@@ -1,6 +1,8 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.neenbedankt.android-apt'
 apply plugin: 'me.ele.buttercookie'
+apply plugin: 'realm-android'
+
 
 android {
   compileSdkVersion 23

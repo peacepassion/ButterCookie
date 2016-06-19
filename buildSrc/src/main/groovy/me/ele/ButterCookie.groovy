@@ -96,6 +96,8 @@ class ButterCookie implements Plugin<Project> {
     objs.add(0, new File(getCopiedSource(variant)))
     objs.add(project.file(getApt(variant)))
 
+    // apt is no longer needed at this step, so disable it
+    variant.javaCompiler.options.compilerArgs.add('-proc:none')
     variant.javaCompiler.state.executed = false
     variant.javaCompiler.execute()
   }
