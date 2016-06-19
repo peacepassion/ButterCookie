@@ -20,4 +20,12 @@
       android:text="Test Library Realm"
       android:textAllCaps="false"
       />
+
+  <Button
+      android:id="@+id/test_flavor_lib"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Test Flavor Library"
+      android:textAllCaps="false"
+      />
 </LinearLayout>

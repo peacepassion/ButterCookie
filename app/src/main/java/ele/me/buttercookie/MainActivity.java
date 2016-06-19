@@ -9,6 +9,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import io.realm.examples.appmodules.ModulesExampleActivity;
 import me.ele.buttercookie.LibraryActivity;
+import me.ele.buttercookie.LibraryFlavorActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -25,5 +26,9 @@ public class MainActivity extends AppCompatActivity {
 
   @OnClick(R.id.test_realm) void gotoRealmTestActivity() {
     startActivity(new Intent(this, ModulesExampleActivity.class));
+  }
+
+  @OnClick(R.id.test_flavor_lib) void launchFlavorActivity() {
+    startActivity(new Intent(this, LibraryFlavorActivity.class));
   }
 }

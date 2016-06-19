@@ -80,7 +80,7 @@ class ButterCookie implements Plugin<Project> {
           //compile & package, but you needn't do anything
         }
 
-        project.tasks.findByName("bundle${variant.buildType.name.capitalize()}").doLast {
+        project.tasks.findByName("bundle${variant.name.capitalize()}").doLast {
           changeAllFieldsOfIdToFinal(variant)
         }
       }
@@ -129,7 +129,7 @@ class ButterCookie implements Plugin<Project> {
   }
 
   void replaceIdsInViewBinders(LibraryVariant variant) {
-    String aptDirPath = "${project.buildDir.absolutePath}/generated/source/apt/${variant.name}"
+    String aptDirPath = "${project.buildDir.absolutePath}/generated/source/apt/${variant.dirName}"
     List<File> viewBinderFiles = getAllViewBinders(aptDirPath)
     Map<String, String> mapping = getMappings(variant)
     viewBinderFiles.each { File file ->
