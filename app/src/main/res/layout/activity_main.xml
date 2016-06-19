@@ -6,9 +6,18 @@
     >
 
   <Button
-      android:id="@+id/btn2"
-      android:layout_width="wrap_content"
+      android:id="@+id/test_library"
+      android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:text="hahah"
+      android:text="Launch Library"
+      android:textAllCaps="false"
+      />
+
+  <Button
+      android:id="@+id/test_realm"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Test Library Realm"
+      android:textAllCaps="false"
       />
 </LinearLayout>

@@ -2,7 +2,7 @@
     package="me.ele.library">
 
   <application
-  >
+      >
     <activity android:name="me.ele.buttercookie.LibraryActivity"/>
   </application>
 
