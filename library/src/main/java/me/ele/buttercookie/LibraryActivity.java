@@ -29,6 +29,10 @@ public class LibraryActivity extends AppCompatActivity {
     setContentView(R.layout.activity_library);
     ButterKnife.bind(this);
 
+    // 这是中文注释
+
+    Log.e("test", "这是中文代码字符串");
+
     Log.e("test", "button--->" + button);
     Log.e("test", "str--->" + str);
   }
