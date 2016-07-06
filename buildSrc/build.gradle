@@ -60,6 +60,7 @@ dependencies {
   compile gradleApi()
   compile localGroovy()
   compile 'com.android.tools.build:gradle:2.1.0'
+  compile 'com.github.javaparser:javaparser-core:2.1.0'
 }
 
 

@@ -33,7 +33,8 @@ public class LibraryActivity extends AppCompatActivity {
     Log.e("test", "str--->" + str);
   }
 
-  @OnClick(value = { R.id.textview1, R.id.btn1, R.id.btn2, R.id.btn3 }) public void click() {
+  @OnClick(value = { R.id.textview1, R.id.btn1,
+      R.id.btn2, R.id.btn3 }) public void click() {
     Toast.makeText(LibraryActivity.this, "haha", Toast.LENGTH_SHORT).show();
   }
 
