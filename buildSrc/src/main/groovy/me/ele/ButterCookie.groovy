@@ -2,6 +2,13 @@ package me.ele
 
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.LibraryVariant
+import com.github.javaparser.JavaParser
+import com.github.javaparser.ast.CompilationUnit
+import com.github.javaparser.ast.Node
+import com.github.javaparser.ast.body.*
+import com.github.javaparser.ast.expr.*
+import com.github.javaparser.ast.visitor.ModifierVisitorAdapter
+import com.github.javaparser.ast.visitor.VoidVisitorAdapter
 import org.apache.commons.io.FileUtils
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -11,27 +18,27 @@ import java.lang.reflect.Field
 
 class ButterCookie implements Plugin<Project> {
 
-  static final String[] ARRAY = ["@OnClick(",
-                                 "@OnCheckedChanged(",
-                                 "@OnEditorAction(",
-                                 "@OnFocusChange(",
-                                 "@OnItemClick(",
-                                 "@OnItemLongClick(",
-                                 "@OnItemSelected(",
-                                 "@OnLongClick(",
-                                 "@OnPageChange(",
-                                 "@OnTextChanged(",
-                                 "@OnTouch(",
-                                 "@BindArray(",
-                                 "@BindBitmap(",
-                                 "@BindBool(",
-                                 "@BindColor(",
-                                 "@BindDimen(",
-                                 "@BindDrawable(",
-                                 "@BindInt(",
-                                 "@BindString(",
-                                 "@BindView(",
-                                 "@BindViews("]
+  static final String[] ARRAY = ["OnClick",
+                                 "OnCheckedChanged",
+                                 "OnEditorAction",
+                                 "OnFocusChange",
+                                 "OnItemClick",
+                                 "OnItemLongClick",
+                                 "OnItemSelected",
+                                 "OnLongClick",
+                                 "OnPageChange",
+                                 "OnTextChanged",
+                                 "OnTouch",
+                                 "BindArray",
+                                 "BindBitmap",
+                                 "BindBool",
+                                 "BindColor",
+                                 "BindDimen",
+                                 "BindDrawable",
+                                 "BindInt",
+                                 "BindString",
+                                 "BindView",
+                                 "BindViews"]
 
   private Project project
   private String packageName
@@ -105,27 +112,28 @@ class ButterCookie implements Plugin<Project> {
   void deleteAnnotationsFromSource(LibraryVariant variant) {
     String sourcePath = getCopiedSource(variant)
     List<File> files = getAllSourceFiles(sourcePath)
+    DeleteAnnotationVisitor visitor = new DeleteAnnotationVisitor()
     files.each { File file ->
-      StringBuilder content = new StringBuilder()
-      file.eachLine { String line ->
-        content.append(getLineAfterDeletion(line))
-        content.append('\n')
+      CompilationUnit cu = JavaParser.parse(file)
+      List<TypeDeclaration> types = cu.getTypes()
+      types.each { TypeDeclaration type -> deleteAnnotationFromClass(visitor, type)
       }
-      file.delete()
-      file << content.toString()
+
+      file.text = cu.toString()
     }
   }
 
-  String getLineAfterDeletion(String line) {
-    ARRAY.each { String item ->
-      if (line.contains(item)) {
-        int startIndex = line.indexOf(item)
-        int endIndex = line.indexOf(item) + item.length() + line.substring(startIndex + item.length()).indexOf(")")
-        line = line.substring(0, startIndex) + line.substring(endIndex + 1)
+  void deleteAnnotationFromClass(DeleteAnnotationVisitor visitor, TypeDeclaration type) {
+    List<BodyDeclaration> members = type.getMembers()
+    members.each { BodyDeclaration member ->
+      if (member instanceof MethodDeclaration) {
+        visitor.visit((MethodDeclaration) member, null)
+      } else if (member instanceof FieldDeclaration) {
+        visitor.visit((FieldDeclaration) member, null)
+      } else if (member instanceof TypeDeclaration) {
+        deleteAnnotationFromClass(visitor, (TypeDeclaration) member)
       }
     }
-
-    return line
   }
 
   void replaceIdsInViewBinders(LibraryVariant variant) {
@@ -133,47 +141,20 @@ class ButterCookie implements Plugin<Project> {
     List<File> viewBinderFiles = getAllViewBinders(aptDirPath)
     Map<String, String> mapping = getMappings(variant)
     viewBinderFiles.each { File file ->
-      StringBuilder content = new StringBuilder()
-      file.eachLine { String line ->
-        boolean isMatched = false
-        mapping.each { k, v ->
-          if (line.contains(k) && !line.contains("view${k}")) {
-            content.append(line.replace(k, mapping.get(k)))
-            isMatched = true
-          }
-        }
-        if (!isMatched) {
-          content.append(line)
-        }
-        content.append('\n')
-      }
-      file.delete()
-      file << content.toString()
+      file.text = new IdReplacementVisitor(mapping).visit(JavaParser.parse(file), null).toString()
     }
   }
 
   Map<String, String> getMappings(LibraryVariant variant) {
     Map<String, String> map = new HashMap<>()
-    String rFilePath = getR(variant)
-
-    String subRes = ""
-
-    project.file(rFilePath).eachLine { line ->
-
-      if (line.contains("public static final class")) {
-        String[] arrayOfStrings = line.trim().split(" ")
-        subRes = arrayOfStrings[arrayOfStrings.length - 2]
-      }
-
-      if (line.contains("public static int") && !line.contains("public static int[]")) {
-        try {
-          String[] segments = line.trim().split(" ")
-          String[] validInfos = segments[segments.length - 1].trim().split("=")
-          String key = "${Integer.parseInt(validInfos[1].substring(2, validInfos[1].length() - 1), 16)}"
-          String value = "${findPackageName()}.R.${subRes}.${validInfos[0]}"
-          map.put(key, value)
-        } catch (Exception e) {
-          //ignore invalid line
+    CompilationUnit cu = JavaParser.parse(project.file(getR(variant)))
+    List<TypeDeclaration> types = cu.getTypes()
+    types.each { TypeDeclaration type ->
+      List<BodyDeclaration> members = type.getMembers()
+      members.each { BodyDeclaration member ->
+        if (member instanceof TypeDeclaration) {
+          new CollectMapVisitor(((TypeDeclaration) member).name, findPackageName(), map).visit(
+              member, null)
         }
       }
     }
@@ -182,15 +163,9 @@ class ButterCookie implements Plugin<Project> {
   }
 
   void deleteAllFinalInIds(LibraryVariant variant) {
-    String rFilePath = getR(variant)
-    StringBuilder content = new StringBuilder()
-    project.file(rFilePath).eachLine { line ->
-      content.append(line.replace("public static final int", "public static int"))
-      content.append('\n')
-    }
-
-    project.file(rFilePath).delete()
-    project.file(rFilePath) << content.toString()
+    File rFile = project.file(getR(variant))
+    rFile.text =
+        new ChangeIdFinalVisitor(false).visit(JavaParser.parse(rFile, null), null).toString()
   }
 
   List<File> getAllViewBinders(String dirPath) {
@@ -223,15 +198,9 @@ class ButterCookie implements Plugin<Project> {
 
   //change all fields in R.class to final
   void changeAllFieldsOfIdToFinal(LibraryVariant variant) {
-    String rFilePath = getR(variant)
-    StringBuilder content = new StringBuilder()
-    project.file(rFilePath).eachLine { line ->
-      content.append(line.replace("public static int", "public static final int"))
-      content.append('\n')
-    }
-
-    project.file(rFilePath).delete()
-    project.file(rFilePath) << content.toString()
+    File rFile = project.file(getR(variant))
+    rFile.text =
+        new ChangeIdFinalVisitor(true).visit(JavaParser.parse(rFile, null), null).toString()
   }
 
   String getR(LibraryVariant variant) {
@@ -266,5 +235,107 @@ class ButterCookie implements Plugin<Project> {
     }
     File manifestFile = project.android.sourceSets.main.manifest.srcFile
     return packageName = (new XmlParser()).parse(manifestFile).@package
+  }
+
+  public static class ChangeIdFinalVisitor extends ModifierVisitorAdapter {
+
+    boolean tobeFinal
+
+    ChangeIdFinalVisitor(boolean tobeFinal) {
+      this.tobeFinal = tobeFinal
+    }
+
+    @Override
+    Node visit(FieldDeclaration n, Object arg) {
+      if (tobeFinal) {
+        n.setModifiers(n.modifiers | ModifierSet.FINAL)
+      } else {
+        n.setModifiers(n.modifiers & ~ModifierSet.FINAL)
+      }
+      return n
+    }
+  }
+
+  public static class IdReplacementVisitor extends ModifierVisitorAdapter {
+    private Map<String, String> map;
+
+    IdReplacementVisitor(Map<String, String> map) {
+      this.map = map
+    }
+
+    @Override
+    Node visit(MethodCallExpr n, Object a) {
+      List<Expression> newArgs = new ArrayList<>()
+      List<Expression> args = n.args
+      args?.each { Expression arg ->
+        if (arg instanceof IntegerLiteralExpr) {
+          int value = Integer.parseInt(arg.value)
+          String key = findMappedId(value)
+          if (key != null) {
+            newArgs.add(new NameExpr(key))
+            return
+          }
+        }
+        newArgs.add(arg)
+      }
+      n.setArgs(newArgs)
+      return n
+    }
+
+    String findMappedId(int value) {
+      for (Map.Entry<String, String> entry : map.entrySet()) {
+        int v = Integer.parseInt(entry.key)
+        if (v == value) {
+          return entry.value
+        }
+      }
+      return null
+    }
+  }
+
+  public static class CollectMapVisitor extends VoidVisitorAdapter {
+
+    String clsName
+    String pkgName;
+    Map<String, String> map
+
+    CollectMapVisitor(String clsName, String pkgName, Map<String, String> map) {
+      this.clsName = clsName
+      this.pkgName = pkgName
+      this.map = map
+    }
+
+    @Override
+    void visit(FieldDeclaration n, Object arg) {
+      if (n.variables.size() == 1 && n.type.toString() == 'int') {
+        VariableDeclarator declarator = n.variables.get(0)
+        map.put(Integer.decode(declarator.init.toStringWithoutComments()).toString(),
+            "${pkgName}.R.${clsName}.${declarator.id.name}")
+      }
+    }
+  }
+
+  public static class DeleteAnnotationVisitor extends ModifierVisitorAdapter {
+    @Override
+    Node visit(MethodDeclaration n, Object arg) {
+      return n.setAnnotations(filterAnnotations(n.getAnnotations()))
+    }
+
+    @Override
+    Node visit(FieldDeclaration n, Object arg) {
+      return n.setAnnotations(filterAnnotations(n.getAnnotations()))
+    }
+
+    List<AnnotationExpr> filterAnnotations(List<AnnotationExpr> annotations) {
+      if (annotations == null || annotations.size() == 0) {
+        return annotations
+      }
+      annotations.each { AnnotationExpr annotation ->
+        if (ARRAY.contains(annotation.name.toString())) {
+          annotations.remove(annotation)
+        }
+      }
+      return annotations
+    }
   }
 }
