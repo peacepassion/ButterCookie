@@ -16,7 +16,7 @@ buildscript {
   }
   dependencies {
     ...
-    classpath 'me.ele:buttercookie-plugin:1.0.3'
+    classpath 'me.ele:buttercookie-plugin:1.1.0'
   }
 }
   
