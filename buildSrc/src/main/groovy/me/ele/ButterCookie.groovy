@@ -114,7 +114,7 @@ class ButterCookie implements Plugin<Project> {
     List<File> files = getAllSourceFiles(sourcePath)
     DeleteAnnotationVisitor visitor = new DeleteAnnotationVisitor()
     files.each { File file ->
-      CompilationUnit cu = JavaParser.parse(file)
+      CompilationUnit cu = JavaParser.parse(file, "UTF-8")
       List<TypeDeclaration> types = cu.getTypes()
       types.each { TypeDeclaration type -> deleteAnnotationFromClass(visitor, type)
       }
@@ -141,13 +141,13 @@ class ButterCookie implements Plugin<Project> {
     List<File> viewBinderFiles = getAllViewBinders(aptDirPath)
     Map<String, String> mapping = getMappings(variant)
     viewBinderFiles.each { File file ->
-      file.text = new IdReplacementVisitor(mapping).visit(JavaParser.parse(file), null).toString()
+      file.text = new IdReplacementVisitor(mapping).visit(JavaParser.parse(file, "UTF-8"), null).toString()
     }
   }
 
   Map<String, String> getMappings(LibraryVariant variant) {
     Map<String, String> map = new HashMap<>()
-    CompilationUnit cu = JavaParser.parse(project.file(getR(variant)))
+    CompilationUnit cu = JavaParser.parse(project.file(getR(variant)), "UTF-8")
     List<TypeDeclaration> types = cu.getTypes()
     types.each { TypeDeclaration type ->
       List<BodyDeclaration> members = type.getMembers()
@@ -165,7 +165,7 @@ class ButterCookie implements Plugin<Project> {
   void deleteAllFinalInIds(LibraryVariant variant) {
     File rFile = project.file(getR(variant))
     rFile.text =
-        new ChangeIdFinalVisitor(false).visit(JavaParser.parse(rFile, null), null).toString()
+        new ChangeIdFinalVisitor(false).visit(JavaParser.parse(rFile, "UTF-8"), null).toString()
   }
 
   List<File> getAllViewBinders(String dirPath) {
@@ -200,7 +200,7 @@ class ButterCookie implements Plugin<Project> {
   void changeAllFieldsOfIdToFinal(LibraryVariant variant) {
     File rFile = project.file(getR(variant))
     rFile.text =
-        new ChangeIdFinalVisitor(true).visit(JavaParser.parse(rFile, null), null).toString()
+        new ChangeIdFinalVisitor(true).visit(JavaParser.parse(rFile, "UTF-8"), null).toString()
   }
 
   String getR(LibraryVariant variant) {

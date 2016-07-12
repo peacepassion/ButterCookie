@@ -38,6 +38,10 @@ public class LibraryActivity extends AppCompatActivity {
     Toast.makeText(LibraryActivity.this, "haha", Toast.LENGTH_SHORT).show();
   }
 
+  @OnClick(R.id.btn4) public void onClickTestChinese() {
+    Toast.makeText(LibraryActivity.this, "请选择颜色", Toast.LENGTH_SHORT).show();
+  }
+
   public class InnerClass2 extends View {
 
     @BindString(R.string.app_name)
